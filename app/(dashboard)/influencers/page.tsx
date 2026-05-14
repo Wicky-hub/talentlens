@@ -5,6 +5,8 @@ import type { Influencer, Platform } from '@/types'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { InfluencerFilters } from '@/components/dashboard/influencer-filters'
+import { getLocale } from '@/lib/locale'
+import { getTranslation } from '@/lib/i18n'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -13,6 +15,7 @@ type PageProps = {
 }
 
 type SortColumn = 'talent_score' | 'follower_count' | 'avg_engagement_rate'
+type T = ReturnType<typeof getTranslation>
 
 const VALID_PLATFORMS: Platform[] = ['instagram', 'tiktok', 'youtube', 'facebook']
 const VALID_SORTS: SortColumn[] = ['talent_score', 'follower_count', 'avg_engagement_rate']
@@ -46,7 +49,8 @@ function formatFollowers(n: number): string {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function InfluencersPage({ searchParams }: PageProps) {
-  const supabase = await createServerClient()
+  const [locale, supabase] = await Promise.all([getLocale(), createServerClient()])
+  const t = getTranslation(locale)
 
   const q = sp(searchParams.q).trim().slice(0, 100)
   const platform = sp(searchParams.platform)
@@ -68,9 +72,7 @@ export default async function InfluencersPage({ searchParams }: PageProps) {
     query = query.gte('talent_score', minScore)
   }
 
-  const { data, count } = await query
-    .order(sort, { ascending: false })
-    .limit(24)
+  const { data } = await query.order(sort, { ascending: false }).limit(24)
 
   const influencers = (data ?? []) as Influencer[]
   const isFiltered = !!(q || platform || minScore)
@@ -79,15 +81,13 @@ export default async function InfluencersPage({ searchParams }: PageProps) {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">ค้นหาอินฟลูเอนเซอร์</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t.influencers.title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {isFiltered
-            ? `พบ ${influencers.length} รายการ`
-            : 'ค้นหาและกรองอินฟลูเอนเซอร์ที่เหมาะกับแคมเปญของคุณ'}
+          {isFiltered ? t.influencers.foundResult(influencers.length) : t.influencers.subtitle}
         </p>
       </div>
 
-      {/* Search + filters — wrapped in Suspense as required by useSearchParams */}
+      {/* Filters — wrapped in Suspense because InfluencerFilters uses useSearchParams */}
       <Suspense fallback={<FiltersSkeleton />}>
         <InfluencerFilters />
       </Suspense>
@@ -98,15 +98,15 @@ export default async function InfluencersPage({ searchParams }: PageProps) {
           <div className="rounded-full bg-muted p-4">
             <Users className="h-8 w-8 text-muted-foreground" />
           </div>
-          <p className="font-medium">ไม่พบอินฟลูเอนเซอร์</p>
+          <p className="font-medium">{t.influencers.notFound}</p>
           <p className="text-sm text-muted-foreground">
-            {isFiltered ? 'ลองเปลี่ยนคำค้นหาหรือตัวกรอง' : 'เพิ่มอินฟลูเอนเซอร์เพื่อเริ่มต้น'}
+            {isFiltered ? t.influencers.tryAdjust : t.influencers.addToStart}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {influencers.map((inf) => (
-            <InfluencerCard key={inf.id} influencer={inf} />
+            <InfluencerCard key={inf.id} influencer={inf} t={t} />
           ))}
         </div>
       )}
@@ -116,7 +116,7 @@ export default async function InfluencersPage({ searchParams }: PageProps) {
 
 // ─── Influencer card ──────────────────────────────────────────────────────────
 
-function InfluencerCard({ influencer: inf }: { influencer: Influencer }) {
+function InfluencerCard({ influencer: inf, t }: { influencer: Influencer; t: T }) {
   const platform = PLATFORM_CONFIG[inf.platform]
   const fakePct = inf.talent_score_breakdown?.fake_follower_pct ?? 0
   const engagePct = (inf.avg_engagement_rate * 100).toFixed(1)
@@ -132,12 +132,9 @@ function InfluencerCard({ influencer: inf }: { influencer: Influencer }) {
     <div className="group flex flex-col rounded-xl border bg-card shadow-sm transition-shadow hover:shadow-md">
       {/* Card header */}
       <div className="flex items-start gap-4 p-5">
-        {/* Avatar */}
         <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
           {initials || '?'}
         </div>
-
-        {/* Name + platform */}
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
@@ -156,11 +153,11 @@ function InfluencerCard({ influencer: inf }: { influencer: Influencer }) {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-px border-y bg-muted/50">
         <div className="bg-card px-5 py-3">
-          <p className="text-xs text-muted-foreground">ผู้ติดตาม</p>
+          <p className="text-xs text-muted-foreground">{t.influencers.followers}</p>
           <p className="mt-0.5 text-base font-bold">{formatFollowers(inf.follower_count)}</p>
         </div>
         <div className="bg-card px-5 py-3">
-          <p className="text-xs text-muted-foreground">Engagement</p>
+          <p className="text-xs text-muted-foreground">{t.influencers.engagement}</p>
           <div className="mt-0.5 flex items-center gap-1">
             <EngagementIcon rate={inf.avg_engagement_rate} />
             <p className="text-base font-bold">{engagePct}%</p>
@@ -170,7 +167,6 @@ function InfluencerCard({ influencer: inf }: { influencer: Influencer }) {
 
       {/* Body */}
       <div className="flex flex-1 flex-col gap-3 p-5">
-        {/* Categories */}
         {inf.categories.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {inf.categories.slice(0, 4).map((cat) => (
@@ -187,11 +183,10 @@ function InfluencerCard({ influencer: inf }: { influencer: Influencer }) {
           </div>
         )}
 
-        {/* Fake follower warning */}
         {fakePct >= 15 && (
           <div className="flex items-center gap-1.5 rounded-md bg-amber-50 px-2.5 py-1.5 text-xs text-amber-700">
             <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
-            ผู้ติดตามปลอมประมาณ {fakePct}%
+            {t.influencers.fakePctWarning(fakePct)}
           </div>
         )}
       </div>
@@ -210,7 +205,7 @@ function InfluencerCard({ influencer: inf }: { influencer: Influencer }) {
             <span className="ml-0.5 text-xs font-normal opacity-70">/100</span>
           </span>
         ) : (
-          <span className="text-xs text-muted-foreground">ยังไม่มีคะแนน</span>
+          <span className="text-xs text-muted-foreground">{t.influencers.noScore}</span>
         )}
       </div>
     </div>

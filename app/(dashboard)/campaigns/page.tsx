@@ -5,36 +5,33 @@ import type { Campaign, CampaignStatus } from '@/types'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { getLocale } from '@/lib/locale'
+import { getTranslation } from '@/lib/i18n'
 
-// ─── Config ───────────────────────────────────────────────────────────────────
+type T = ReturnType<typeof getTranslation>
 
-const STATUS_CONFIG: Record<CampaignStatus, { label: string; className: string; dot: string }> = {
-  draft: {
-    label: 'ร่าง',
-    className: 'bg-slate-100 text-slate-600 hover:bg-slate-100',
-    dot: 'bg-slate-400',
-  },
-  active: {
-    label: 'ใช้งาน',
-    className: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100',
-    dot: 'bg-emerald-500',
-  },
-  completed: {
-    label: 'เสร็จสิ้น',
-    className: 'bg-blue-100 text-blue-700 hover:bg-blue-100',
-    dot: 'bg-blue-500',
-  },
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function statusConfig(status: CampaignStatus, t: T) {
+  const map: Record<CampaignStatus, { label: string; className: string; dot: string }> = {
+    draft: { label: t.status.draft, className: 'bg-slate-100 text-slate-600 hover:bg-slate-100', dot: 'bg-slate-400' },
+    active: { label: t.status.active, className: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100', dot: 'bg-emerald-500' },
+    completed: { label: t.status.completed, className: 'bg-blue-100 text-blue-700 hover:bg-blue-100', dot: 'bg-blue-500' },
+  }
+  return map[status]
 }
 
-function formatFollowerRange(min: number, max: number): string {
+function formatFollowerRange(min: number, max: number, unit: string): string {
   const fmt = (n: number) => (n >= 1_000 ? `${Math.round(n / 1_000)}K` : n.toString())
-  return `${fmt(min)} – ${fmt(max)} คน`
+  const range = `${fmt(min)} – ${fmt(max)}`
+  return unit ? `${range} ${unit}` : range
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function CampaignsPage() {
-  const supabase = await createServerClient()
+  const [locale, supabase] = await Promise.all([getLocale(), createServerClient()])
+  const t = getTranslation(locale)
 
   const [
     { data: campaignData },
@@ -56,7 +53,6 @@ export default async function CampaignsPage() {
 
   const campaigns = (campaignData ?? []) as Campaign[]
 
-  // Per-campaign match count
   const matchMap = new Map<string, number>()
   matchIds?.forEach(({ campaign_id }) => {
     matchMap.set(campaign_id, (matchMap.get(campaign_id) ?? 0) + 1)
@@ -67,24 +63,31 @@ export default async function CampaignsPage() {
       {/* ── Header ── */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">แคมเปญ</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            จัดการแคมเปญและติดตามผลการจับคู่อินฟลูเอนเซอร์
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">{t.campaigns.title}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t.campaigns.subtitle}</p>
         </div>
-        <Button size="sm">+ สร้างแคมเปญ</Button>
+        <Button size="sm">{t.campaigns.create}</Button>
       </div>
 
       {/* ── Stats ── */}
       <div className="grid grid-cols-3 gap-4">
-        <MiniStat label="แคมเปญทั้งหมด" value={campaigns.length} icon={Megaphone} />
-        <MiniStat label="กำลังใช้งาน" value={activeCount ?? 0} icon={Target} accent="emerald" />
-        <MiniStat label="เสร็จสิ้นแล้ว" value={completedCount ?? 0} icon={Users} accent="blue" />
+        <MiniStat label={t.campaigns.statTotal} value={campaigns.length} icon={Megaphone} />
+        <MiniStat label={t.campaigns.statActive} value={activeCount ?? 0} icon={Target} accent="emerald" />
+        <MiniStat label={t.campaigns.statCompleted} value={completedCount ?? 0} icon={Users} accent="blue" />
       </div>
+
+      {/* Count badge */}
+      {campaigns.length > 0 && (
+        <div className="flex justify-end">
+          <span className="rounded-full bg-muted px-3 py-1 text-sm text-muted-foreground">
+            {t.campaigns.countBadge(campaigns.length)}
+          </span>
+        </div>
+      )}
 
       {/* ── Campaign grid ── */}
       {campaigns.length === 0 ? (
-        <EmptyState />
+        <EmptyState t={t} />
       ) : (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {campaigns.map((campaign) => (
@@ -92,6 +95,7 @@ export default async function CampaignsPage() {
               key={campaign.id}
               campaign={campaign}
               matchCount={matchMap.get(campaign.id) ?? 0}
+              t={t}
             />
           ))}
         </div>
@@ -128,7 +132,7 @@ function MiniStat({
         <Icon className={cn('h-5 w-5', iconClass)} />
         <div>
           <p className="text-xs text-muted-foreground">{label}</p>
-          <p className="text-xl font-bold">{value.toLocaleString('th-TH')}</p>
+          <p className="text-xl font-bold">{value.toLocaleString()}</p>
         </div>
       </div>
     </div>
@@ -140,12 +144,14 @@ function MiniStat({
 function CampaignCard({
   campaign,
   matchCount,
+  t,
 }: {
   campaign: Campaign
   matchCount: number
+  t: T
 }) {
-  const status = STATUS_CONFIG[campaign.status]
-  const createdDate = new Date(campaign.created_at).toLocaleDateString('th-TH', {
+  const status = statusConfig(campaign.status, t)
+  const createdDate = new Date(campaign.created_at).toLocaleDateString(t.common.dateLocale, {
     day: 'numeric',
     month: 'short',
     year: '2-digit',
@@ -176,10 +182,10 @@ function CampaignCard({
         <div className="bg-card px-5 py-3">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Wallet className="h-3.5 w-3.5" />
-            งบประมาณ
+            {t.campaigns.budget}
           </div>
           <p className="mt-0.5 font-semibold">
-            {campaign.budget.toLocaleString('th-TH', {
+            {campaign.budget.toLocaleString(t.common.numberLocale, {
               style: 'currency',
               currency: 'THB',
               maximumFractionDigits: 0,
@@ -189,13 +195,13 @@ function CampaignCard({
         <div className="bg-card px-5 py-3">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Target className="h-3.5 w-3.5" />
-            คู่ที่พบ
+            {t.campaigns.matchesFound}
           </div>
           <p className="mt-0.5 font-semibold">
             {matchCount > 0 ? (
-              `${matchCount.toLocaleString('th-TH')} คู่`
+              `${matchCount.toLocaleString(t.common.numberLocale)}`
             ) : (
-              <span className="text-muted-foreground">ยังไม่มี</span>
+              <span className="text-muted-foreground">{t.campaigns.noMatches}</span>
             )}
           </p>
         </div>
@@ -203,7 +209,6 @@ function CampaignCard({
 
       {/* Body */}
       <div className="flex flex-1 flex-col gap-3 px-5 py-4">
-        {/* Categories */}
         {campaign.target_categories.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {campaign.target_categories.slice(0, 3).map((cat) => (
@@ -222,11 +227,14 @@ function CampaignCard({
           </div>
         )}
 
-        {/* Requirements row */}
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
             <Users className="h-3 w-3" />
-            {formatFollowerRange(campaign.min_followers, campaign.max_followers)}
+            {formatFollowerRange(
+              campaign.min_followers,
+              campaign.max_followers,
+              t.common.personsUnit,
+            )}
           </span>
           <span>TalentScore ≥ {campaign.min_talent_score}</span>
           {campaign.target_location && <span>📍 {campaign.target_location}</span>}
@@ -236,7 +244,7 @@ function CampaignCard({
       {/* Footer action */}
       <div className="border-t px-5 py-3">
         <button className="flex w-full items-center justify-between text-sm font-medium text-primary transition-colors hover:text-primary/80">
-          ดูผลการจับคู่
+          {t.campaigns.viewMatches}
           <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
         </button>
       </div>
@@ -246,19 +254,17 @@ function CampaignCard({
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
-function EmptyState() {
+function EmptyState({ t }: { t: T }) {
   return (
     <div className="flex flex-col items-center justify-center gap-4 rounded-xl border bg-card py-24 text-center">
       <div className="rounded-full bg-muted p-5">
         <Megaphone className="h-8 w-8 text-muted-foreground" />
       </div>
       <div className="space-y-1">
-        <p className="font-semibold">ยังไม่มีแคมเปญ</p>
-        <p className="text-sm text-muted-foreground">
-          สร้างแคมเปญแรกของคุณเพื่อเริ่มค้นหาอินฟลูเอนเซอร์ที่เหมาะสม
-        </p>
+        <p className="font-semibold">{t.campaigns.noCampaigns}</p>
+        <p className="text-sm text-muted-foreground">{t.campaigns.noCampaignsDesc}</p>
       </div>
-      <Button size="sm">+ สร้างแคมเปญแรก</Button>
+      <Button size="sm">{t.campaigns.createFirst}</Button>
     </div>
   )
 }

@@ -5,27 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Search, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
-
-const PLATFORMS = [
-  { value: '', label: 'ทุกแพลตฟอร์ม' },
-  { value: 'instagram', label: 'Instagram' },
-  { value: 'tiktok', label: 'TikTok' },
-  { value: 'youtube', label: 'YouTube' },
-  { value: 'facebook', label: 'Facebook' },
-]
-
-const MIN_SCORES = [
-  { value: '', label: 'คะแนนทั้งหมด' },
-  { value: '60', label: 'TalentScore ≥ 60' },
-  { value: '70', label: 'TalentScore ≥ 70' },
-  { value: '80', label: 'TalentScore ≥ 80' },
-]
-
-const SORT_OPTIONS = [
-  { value: 'talent_score', label: 'TalentScore สูงสุด' },
-  { value: 'follower_count', label: 'ผู้ติดตามมากสุด' },
-  { value: 'avg_engagement_rate', label: 'Engagement สูงสุด' },
-]
+import { useLocale } from '@/components/i18n/locale-provider'
 
 const selectClass =
   'h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ' +
@@ -33,10 +13,32 @@ const selectClass =
   'disabled:cursor-not-allowed disabled:opacity-50'
 
 export function InfluencerFilters() {
+  const { t } = useLocale()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
   const [query, setQuery] = useState(searchParams.get('q') ?? '')
+
+  const PLATFORMS = [
+    { value: '', label: t.filters.allPlatforms },
+    { value: 'instagram', label: 'Instagram' },
+    { value: 'tiktok', label: 'TikTok' },
+    { value: 'youtube', label: 'YouTube' },
+    { value: 'facebook', label: 'Facebook' },
+  ]
+
+  const MIN_SCORES = [
+    { value: '', label: t.filters.allScores },
+    { value: '60', label: 'TalentScore ≥ 60' },
+    { value: '70', label: 'TalentScore ≥ 70' },
+    { value: '80', label: 'TalentScore ≥ 80' },
+  ]
+
+  const SORT_OPTIONS = [
+    { value: 'talent_score', label: t.filters.sortByScore },
+    { value: 'follower_count', label: t.filters.sortByFollowers },
+    { value: 'avg_engagement_rate', label: t.filters.sortByEngagement },
+  ]
 
   // Sync query state if browser back/forward changes URL
   useEffect(() => {
@@ -59,9 +61,7 @@ export function InfluencerFilters() {
   }
 
   const hasFilters =
-    !!searchParams.get('q') ||
-    !!searchParams.get('platform') ||
-    !!searchParams.get('minScore')
+    !!searchParams.get('q') || !!searchParams.get('platform') || !!searchParams.get('minScore')
 
   function clearAll() {
     setQuery('')
@@ -74,7 +74,7 @@ export function InfluencerFilters() {
       <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="ค้นหาชื่อหรือ @username..."
+          placeholder={t.filters.searchPlaceholder}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="pl-9 pr-9"
@@ -135,7 +135,7 @@ export function InfluencerFilters() {
           )}
         >
           <X className="h-3.5 w-3.5" />
-          ล้าง
+          {t.filters.clear}
         </button>
       )}
     </div>

@@ -3,8 +3,12 @@ import { createServerClient } from '@/lib/supabase/server'
 import type { Report, Campaign, Influencer, Platform } from '@/types'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
+import { getLocale } from '@/lib/locale'
+import { getTranslation } from '@/lib/i18n'
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type T = ReturnType<typeof getTranslation>
 
 const PLATFORM_CONFIG: Record<Platform, { label: string; className: string }> = {
   instagram: { label: 'Instagram', className: 'bg-pink-100 text-pink-700' },
@@ -13,7 +17,6 @@ const PLATFORM_CONFIG: Record<Platform, { label: string; className: string }> = 
   facebook: { label: 'Facebook', className: 'bg-blue-100 text-blue-700' },
 }
 
-/** Strip Markdown syntax for plain-text preview. */
 function textPreview(md: string, max = 220): string {
   const plain = md
     .replace(/#{1,6}\s+/g, '')
@@ -36,7 +39,8 @@ type ReportWithMeta = Report & {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function ReportsPage() {
-  const supabase = await createServerClient()
+  const [locale, supabase] = await Promise.all([getLocale(), createServerClient()])
+  const t = getTranslation(locale)
 
   const { data: reportRows } = await supabase
     .from('reports')
@@ -46,7 +50,6 @@ export default async function ReportsPage() {
 
   const reports = (reportRows ?? []) as Report[]
 
-  // Batch-fetch related campaigns and influencers
   const campaignIds = Array.from(new Set(reports.map((r) => r.campaign_id)))
   const influencerIds = Array.from(new Set(reports.map((r) => r.influencer_id)))
 
@@ -87,25 +90,23 @@ export default async function ReportsPage() {
       {/* ── Header ── */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">รายงาน</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            รายงานการวิเคราะห์อินฟลูเอนเซอร์ที่สร้างโดย AI สำหรับแต่ละแคมเปญ
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">{t.reports.title}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t.reports.subtitle}</p>
         </div>
         {reports.length > 0 && (
           <span className="rounded-full bg-muted px-3 py-1 text-sm text-muted-foreground">
-            {reports.length} รายการ
+            {t.reports.countBadge(reports.length)}
           </span>
         )}
       </div>
 
       {/* ── Content ── */}
       {enriched.length === 0 ? (
-        <EmptyState />
+        <EmptyState t={t} />
       ) : (
         <div className="space-y-4">
           {enriched.map((report) => (
-            <ReportCard key={report.id} report={report} />
+            <ReportCard key={report.id} report={report} t={t} />
           ))}
         </div>
       )}
@@ -115,16 +116,16 @@ export default async function ReportsPage() {
 
 // ─── Report card ──────────────────────────────────────────────────────────────
 
-function ReportCard({ report }: { report: ReportWithMeta }) {
+function ReportCard({ report, t }: { report: ReportWithMeta; t: T }) {
   const { campaign, influencer } = report
   const platform = influencer ? PLATFORM_CONFIG[influencer.platform] : null
   const preview = textPreview(report.content)
-  const date = new Date(report.created_at).toLocaleDateString('th-TH', {
+  const date = new Date(report.created_at).toLocaleDateString(t.common.dateLocale, {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
   })
-  const time = new Date(report.created_at).toLocaleTimeString('th-TH', {
+  const time = new Date(report.created_at).toLocaleTimeString(t.common.dateLocale, {
     hour: '2-digit',
     minute: '2-digit',
   })
@@ -141,15 +142,14 @@ function ReportCard({ report }: { report: ReportWithMeta }) {
                 <FileText className="h-4 w-4 text-primary" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">แคมเปญ</p>
+                <p className="text-xs text-muted-foreground">{t.reports.campaign}</p>
                 <p className="font-medium leading-tight">{campaign.name}</p>
               </div>
             </div>
           ) : (
-            <span className="text-sm text-muted-foreground">ไม่พบข้อมูลแคมเปญ</span>
+            <span className="text-sm text-muted-foreground">{t.reports.noCampaign}</span>
           )}
 
-          {/* Separator */}
           <div className="hidden h-8 w-px bg-border sm:block" />
 
           {/* Influencer */}
@@ -159,7 +159,7 @@ function ReportCard({ report }: { report: ReportWithMeta }) {
                 {(influencer.display_name || influencer.username).slice(0, 2).toUpperCase()}
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">อินฟลูเอนเซอร์</p>
+                <p className="text-xs text-muted-foreground">{t.reports.influencer}</p>
                 <div className="flex items-center gap-1.5">
                   <p className="font-medium leading-tight">@{influencer.username}</p>
                   {platform && (
@@ -171,7 +171,7 @@ function ReportCard({ report }: { report: ReportWithMeta }) {
               </div>
             </div>
           ) : (
-            <span className="text-sm text-muted-foreground">ไม่พบข้อมูลอินฟลูเอนเซอร์</span>
+            <span className="text-sm text-muted-foreground">{t.reports.noInfluencer}</span>
           )}
         </div>
 
@@ -193,10 +193,10 @@ function ReportCard({ report }: { report: ReportWithMeta }) {
       <div className="flex items-center justify-between border-t bg-muted/20 px-5 py-3 rounded-b-xl">
         <div className="flex items-center gap-2">
           <div className="h-2 w-2 rounded-full bg-emerald-500" />
-          <span className="text-xs text-muted-foreground">สร้างโดย AI · Claude</span>
+          <span className="text-xs text-muted-foreground">{t.reports.generatedBy}</span>
         </div>
         <button className="flex items-center gap-1.5 text-xs font-medium text-primary transition-colors hover:text-primary/80">
-          อ่านรายงานเต็ม
+          {t.reports.readFull}
           <ExternalLink className="h-3 w-3" />
         </button>
       </div>
@@ -206,17 +206,15 @@ function ReportCard({ report }: { report: ReportWithMeta }) {
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
-function EmptyState() {
+function EmptyState({ t }: { t: T }) {
   return (
     <div className="flex flex-col items-center justify-center gap-4 rounded-xl border bg-card py-24 text-center">
       <div className="rounded-full bg-muted p-5">
         <FileText className="h-8 w-8 text-muted-foreground" />
       </div>
       <div className="space-y-1">
-        <p className="font-semibold">ยังไม่มีรายงาน</p>
-        <p className="max-w-xs text-sm text-muted-foreground">
-          รายงานจะถูกสร้างอัตโนมัติหลังจากระบบจับคู่อินฟลูเอนเซอร์กับแคมเปญสำเร็จ
-        </p>
+        <p className="font-semibold">{t.reports.noReports}</p>
+        <p className="max-w-xs text-sm text-muted-foreground">{t.reports.noReportsDesc}</p>
       </div>
     </div>
   )
