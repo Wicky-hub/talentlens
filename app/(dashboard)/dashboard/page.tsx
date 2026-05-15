@@ -99,7 +99,7 @@ export default async function DashboardPage() {
           <p className="mt-1 text-sm text-muted-foreground">{dateStr}</p>
         </div>
         <Button asChild size="sm">
-          <Link href="/campaigns">{t.dashboard.createCampaign}</Link>
+          <Link href="/campaigns/new">{t.dashboard.createCampaign}</Link>
         </Button>
       </div>
 

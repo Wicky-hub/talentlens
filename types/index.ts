@@ -50,9 +50,13 @@ export interface Campaign {
   sme_id: string
   name: string
   description: string
+  brand: string | null
   budget: number
   target_categories: string[]
+  target_platforms: Platform[]
   target_location: string | null
+  start_date: string | null
+  end_date: string | null
   min_followers: number
   max_followers: number
   min_talent_score: number

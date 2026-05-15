@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Megaphone, Users, Target, Calendar, Wallet, ChevronRight } from 'lucide-react'
+import { Megaphone, Users, Target, Calendar, Wallet, ChevronRight, Plus } from 'lucide-react'
 import { createServerClient } from '@/lib/supabase/server'
 import type { Campaign, CampaignStatus } from '@/types'
 import { cn } from '@/lib/utils'
@@ -66,7 +66,12 @@ export default async function CampaignsPage() {
           <h1 className="text-2xl font-bold tracking-tight">{t.campaigns.title}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t.campaigns.subtitle}</p>
         </div>
-        <Button size="sm">{t.campaigns.create}</Button>
+        <Button size="sm" asChild>
+          <Link href="/campaigns/new">
+            <Plus className="mr-1.5 h-4 w-4" />
+            {t.campaigns.create}
+          </Link>
+        </Button>
       </div>
 
       {/* ── Stats ── */}
@@ -264,7 +269,9 @@ function EmptyState({ t }: { t: T }) {
         <p className="font-semibold">{t.campaigns.noCampaigns}</p>
         <p className="text-sm text-muted-foreground">{t.campaigns.noCampaignsDesc}</p>
       </div>
-      <Button size="sm">{t.campaigns.createFirst}</Button>
+      <Button size="sm" asChild>
+        <Link href="/campaigns/new">{t.campaigns.createFirst}</Link>
+      </Button>
     </div>
   )
 }
