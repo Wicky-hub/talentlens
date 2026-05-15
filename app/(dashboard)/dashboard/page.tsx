@@ -17,24 +17,24 @@ import { Button } from '@/components/ui/button'
 import { getLocale } from '@/lib/locale'
 import { getTranslation } from '@/lib/i18n'
 
+// Always render fresh — never use a cached response from build time.
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardPage() {
   const [locale, supabase] = await Promise.all([getLocale(), createServerClient()])
   const t = getTranslation(locale)
 
   const [
-    { count: influencerCount },
-    { count: activeCampaignCount },
-    { count: matchCount },
-    { data: scoreRows },
-    { data: topInfluencerData },
-    { data: recentCampaignData },
-    { data: campaignMatchIds },
+    r_influencers,
+    r_activeCampaigns,
+    r_matches,
+    r_scores,
+    r_topInfluencers,
+    r_recentCampaigns,
+    r_matchIds,
   ] = await Promise.all([
     supabase.from('influencers').select('*', { count: 'exact', head: true }),
-    supabase
-      .from('campaigns')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'active'),
+    supabase.from('campaigns').select('*', { count: 'exact', head: true }).eq('status', 'active'),
     supabase.from('campaign_matches').select('*', { count: 'exact', head: true }),
     supabase.from('influencers').select('talent_score').not('talent_score', 'is', null),
     supabase
@@ -43,13 +43,29 @@ export default async function DashboardPage() {
       .not('talent_score', 'is', null)
       .order('talent_score', { ascending: false })
       .limit(5),
-    supabase
-      .from('campaigns')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(5),
+    supabase.from('campaigns').select('*').order('created_at', { ascending: false }).limit(5),
     supabase.from('campaign_matches').select('campaign_id'),
   ])
+
+  // Log any Supabase errors to the server console / Vercel logs for debugging.
+  const queryLabels = [
+    'influencers:count', 'campaigns:active:count', 'matches:count',
+    'influencers:scores', 'influencers:top5', 'campaigns:recent5', 'matches:ids',
+  ]
+  ;[r_influencers, r_activeCampaigns, r_matches, r_scores, r_topInfluencers, r_recentCampaigns, r_matchIds]
+    .forEach((r, i) => {
+      if (r.error) {
+        console.error(`[dashboard] ${queryLabels[i]} — ${r.error.code}: ${r.error.message}`)
+      }
+    })
+
+  const { count: influencerCount }    = r_influencers
+  const { count: activeCampaignCount } = r_activeCampaigns
+  const { count: matchCount }          = r_matches
+  const { data: scoreRows }            = r_scores
+  const { data: topInfluencerData }    = r_topInfluencers
+  const { data: recentCampaignData }   = r_recentCampaigns
+  const { data: campaignMatchIds }     = r_matchIds
 
   const avgScore =
     scoreRows?.length
