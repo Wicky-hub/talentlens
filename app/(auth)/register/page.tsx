@@ -1,8 +1,8 @@
 import { getLocale } from '@/lib/locale'
 import { getTranslation } from '@/lib/i18n'
-import { LoginForm } from '@/components/auth/login-form'
+import { RegisterForm } from '@/components/auth/register-form'
 
-export default async function LoginPage() {
+export default async function RegisterPage() {
   const locale = await getLocale()
   const t = getTranslation(locale)
 
@@ -14,13 +14,13 @@ export default async function LoginPage() {
           <span className="text-xl font-bold">T</span>
         </div>
         <h1 className="text-2xl font-bold tracking-tight">TalentLens</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t.auth.loginSubtitle}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{t.auth.registerSubtitle}</p>
       </div>
 
       {/* Card */}
       <div className="rounded-2xl border bg-card p-8 shadow-lg">
-        <h2 className="mb-6 text-xl font-semibold">{t.auth.loginTitle}</h2>
-        <LoginForm t={t.auth} />
+        <h2 className="mb-6 text-xl font-semibold">{t.auth.registerTitle}</h2>
+        <RegisterForm t={t.auth} />
       </div>
     </div>
   )

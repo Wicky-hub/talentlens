@@ -7,16 +7,11 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  // Read env var inside the function so it is evaluated per-request,
-  // not frozen at module-load time. Set DEMO_MODE=true in Vercel env vars
-  // to bypass auth for demos; remove it to re-enable auth instantly.
-  if (process.env.DEMO_MODE !== 'true') {
-    const supabase = await createServerClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) redirect('/login')
-  }
+  const supabase = await createServerClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
 
   return (
     <div className="flex h-screen overflow-hidden">

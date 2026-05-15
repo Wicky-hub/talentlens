@@ -2,14 +2,17 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, Megaphone, FileText } from 'lucide-react'
+import { useTransition } from 'react'
+import { LayoutDashboard, Users, Megaphone, FileText, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useLocale } from '@/components/i18n/locale-provider'
 import { LanguageSwitcher } from '@/components/i18n/language-switcher'
+import { logoutAction } from '@/app/actions/auth'
 
 export function Sidebar() {
   const pathname = usePathname()
   const { t } = useLocale()
+  const [logoutPending, startLogout] = useTransition()
 
   const NAV_ITEMS = [
     { href: '/dashboard', label: t.nav.dashboard, icon: LayoutDashboard },
@@ -45,11 +48,27 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="mt-auto border-t pt-4">
-        <p className="mb-2 px-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-          {t.language.label}
-        </p>
-        <LanguageSwitcher />
+      <div className="mt-auto space-y-3 border-t pt-4">
+        <div>
+          <p className="mb-2 px-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            {t.language.label}
+          </p>
+          <LanguageSwitcher />
+        </div>
+
+        <button
+          disabled={logoutPending}
+          onClick={() => startLogout(() => logoutAction())}
+          className={cn(
+            'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+            logoutPending
+              ? 'cursor-not-allowed text-muted-foreground/50'
+              : 'text-muted-foreground hover:bg-destructive/10 hover:text-destructive',
+          )}
+        >
+          <LogOut className="h-4 w-4" />
+          {logoutPending ? t.auth.loggingOut : t.auth.logout}
+        </button>
       </div>
     </aside>
   )
