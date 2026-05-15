@@ -2,17 +2,15 @@ import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/dashboard/sidebar'
 
-// Set DEMO_MODE=true in Vercel environment variables to bypass auth for demos.
-// Remove the variable (or set it to anything else) to re-enable auth instantly
-// without a redeployment.
-const DEMO_MODE = process.env.DEMO_MODE === 'true'
-
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  if (!DEMO_MODE) {
+  // Read env var inside the function so it is evaluated per-request,
+  // not frozen at module-load time. Set DEMO_MODE=true in Vercel env vars
+  // to bypass auth for demos; remove it to re-enable auth instantly.
+  if (process.env.DEMO_MODE !== 'true') {
     const supabase = await createServerClient()
     const {
       data: { user },
