@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(npm show *)",
+      "Bash(npm install *)",
+      "Bash(git -C /Users/wicky/talentlens init)",
+      "Bash(git -C /Users/wicky/talentlens status)",
+      "Bash(git -C /Users/wicky/talentlens log --oneline)",
+      "Bash(git add *)",
+      "Bash(git *)"
+    ]
+  }
+}
