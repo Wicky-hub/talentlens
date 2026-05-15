@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { getLocale } from '@/lib/locale'
 import { getTranslation } from '@/lib/i18n'
+import { InfluencerAvatar } from '@/components/dashboard/influencer-avatar'
 
 // Always render fresh — never use a cached response from build time.
 export const dynamic = 'force-dynamic'
@@ -341,21 +342,6 @@ function EngagementTrend({ rate }: { rate: number }) {
   return <TrendingDown className="h-3 w-3 text-red-400" />
 }
 
-function InfluencerAvatar({ name }: { name: string }) {
-  const initials = name
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
-
-  return (
-    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
-      <span className="text-xs font-semibold text-primary">{initials || '?'}</span>
-    </div>
-  )
-}
-
 function InfluencerRow({
   influencer: inf,
   rank,
@@ -375,7 +361,7 @@ function InfluencerRow({
         {rank}
       </span>
 
-      <InfluencerAvatar name={inf.display_name || inf.username} />
+      <InfluencerAvatar username={inf.username} categories={inf.categories} size="md" />
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">

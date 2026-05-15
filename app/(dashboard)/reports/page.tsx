@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { getLocale } from '@/lib/locale'
 import { getTranslation } from '@/lib/i18n'
+import { InfluencerAvatar } from '@/components/dashboard/influencer-avatar'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -33,7 +34,7 @@ function textPreview(md: string, max = 220): string {
 
 type ReportWithMeta = Report & {
   campaign: Pick<Campaign, 'id' | 'name'> | null
-  influencer: Pick<Influencer, 'id' | 'username' | 'display_name' | 'platform'> | null
+  influencer: Pick<Influencer, 'id' | 'username' | 'display_name' | 'platform' | 'categories'> | null
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -64,7 +65,7 @@ export default async function ReportsPage() {
     influencerIds.length
       ? supabase
           .from('influencers')
-          .select('id, username, display_name, platform')
+          .select('id, username, display_name, platform, categories')
           .in('id', influencerIds)
           .then((r) => r.data ?? [])
       : Promise.resolve([]),
@@ -74,7 +75,7 @@ export default async function ReportsPage() {
     (campaignData as Pick<Campaign, 'id' | 'name'>[]).map((c) => [c.id, c]),
   )
   const influencerMap = new Map(
-    (influencerData as Pick<Influencer, 'id' | 'username' | 'display_name' | 'platform'>[]).map(
+    (influencerData as Pick<Influencer, 'id' | 'username' | 'display_name' | 'platform' | 'categories'>[]).map(
       (i) => [i.id, i],
     ),
   )
@@ -155,9 +156,7 @@ function ReportCard({ report, t }: { report: ReportWithMeta; t: T }) {
           {/* Influencer */}
           {influencer ? (
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold">
-                {(influencer.display_name || influencer.username).slice(0, 2).toUpperCase()}
-              </div>
+              <InfluencerAvatar username={influencer.username} categories={influencer.categories} size="sm" />
               <div>
                 <p className="text-xs text-muted-foreground">{t.reports.influencer}</p>
                 <div className="flex items-center gap-1.5">

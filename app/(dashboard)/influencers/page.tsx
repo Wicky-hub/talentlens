@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { InfluencerFilters } from '@/components/dashboard/influencer-filters'
 import { getLocale } from '@/lib/locale'
 import { getTranslation } from '@/lib/i18n'
+import { InfluencerAvatar } from '@/components/dashboard/influencer-avatar'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -121,20 +122,11 @@ function InfluencerCard({ influencer: inf, t }: { influencer: Influencer; t: T }
   const fakePct = inf.talent_score_breakdown?.fake_follower_pct ?? 0
   const engagePct = (inf.avg_engagement_rate * 100).toFixed(1)
 
-  const initials = (inf.display_name || inf.username)
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
-
   return (
     <div className="group flex flex-col rounded-xl border bg-card shadow-sm transition-shadow hover:shadow-md">
       {/* Card header */}
       <div className="flex items-start gap-4 p-5">
-        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-          {initials || '?'}
-        </div>
+        <InfluencerAvatar username={inf.username} categories={inf.categories} size="lg" />
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
