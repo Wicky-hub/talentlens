@@ -13,20 +13,21 @@ export default async function EditCampaignPage({ params }: { params: { id: strin
   const [locale, supabase] = await Promise.all([getLocale(), createServerClient()])
   const t = getTranslation(locale)
 
-  const [
-    { data: { user } },
-    { data: campaignRow },
-  ] = await Promise.all([
-    supabase.auth.getUser(),
-    supabase.from('campaigns').select('*').eq('id', params.id).single(),
-  ])
+  // getSession() reads cookies only — safe from Server Components.
+  // Middleware already validated the JWT via getUser() on every request.
+  const { data: { session } } = await supabase.auth.getSession()
+  const { data: campaignRow } = await supabase
+    .from('campaigns')
+    .select('*')
+    .eq('id', params.id)
+    .single()
 
   if (!campaignRow) notFound()
 
   const campaign = campaignRow as Campaign
 
   // Non-owners are bounced back to the detail page
-  if (user?.id !== campaign.sme_id) redirect(`/campaigns/${params.id}`)
+  if (session?.user?.id !== campaign.sme_id) redirect(`/campaigns/${params.id}`)
 
   const nicheLabels: Record<string, string> = {
     beauty:    t.newCampaign.catBeauty,

@@ -41,16 +41,17 @@ export default async function CampaignsPage({ searchParams }: PageProps) {
   const [locale, supabase] = await Promise.all([getLocale(), createServerClient()])
   const t = getTranslation(locale)
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // getSession() reads cookies only — safe from Server Components.
+  // Middleware already validated the JWT via getUser() on every request.
+  const { data: { session } } = await supabase.auth.getSession()
+  const userId = session?.user?.id ?? null
 
   let campaignsQuery = supabase
     .from('campaigns')
     .select('*')
     .order('created_at', { ascending: false })
-  if (tab === 'mine' && user) {
-    campaignsQuery = campaignsQuery.eq('sme_id', user.id)
+  if (tab === 'mine' && userId) {
+    campaignsQuery = campaignsQuery.eq('sme_id', userId)
   }
 
   const [

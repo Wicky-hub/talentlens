@@ -8,10 +8,10 @@ export default async function DashboardLayout({
   children: React.ReactNode
 }) {
   const supabase = await createServerClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  // getSession() reads cookies only — safe from Server Components.
+  // Middleware already validated the JWT via getUser() on every request.
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user) redirect('/login')
 
   return (
     <div className="flex h-screen overflow-hidden">
