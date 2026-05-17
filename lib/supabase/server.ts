@@ -11,9 +11,17 @@ function buildCookieMethods(cookieStore: Awaited<ReturnType<typeof cookies>>) {
       return cookieStore.getAll()
     },
     setAll(cookiesToSet: CookieToSet[]) {
-      cookiesToSet.forEach(({ name, value, options }) => {
-        cookieStore.set(name, value, options)
-      })
+      // Server Components cannot write cookies — only Server Actions and Route
+      // Handlers can. We catch the error here so a token refresh attempt inside
+      // a Server Component doesn't crash the page. The middleware handles
+      // proper token refresh on every request.
+      try {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          cookieStore.set(name, value, options)
+        })
+      } catch {
+        // intentionally ignored — see comment above
+      }
     },
   }
 }
