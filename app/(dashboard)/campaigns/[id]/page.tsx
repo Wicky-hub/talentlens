@@ -10,13 +10,15 @@ import {
   Monitor,
 } from 'lucide-react'
 import { createServerClient } from '@/lib/supabase/server'
-import type { Campaign, CampaignStatus } from '@/types'
+import type { Campaign, CampaignStatus, CampaignInfluencer } from '@/types'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { getLocale } from '@/lib/locale'
 import { getTranslation } from '@/lib/i18n'
 import { DeleteCampaignButton } from '@/components/campaigns/delete-campaign-button'
+import { AiMatchingPanel } from '@/components/campaigns/ai-matching-panel'
+import { CampaignInfluencersSection } from '@/components/campaigns/campaign-influencers-section'
 
 export const dynamic = 'force-dynamic'
 
@@ -73,18 +75,26 @@ export default async function CampaignDetailPage({
   const [
     { data: campaignRow },
     { count: matchCount },
+    { data: ciData },
   ] = await Promise.all([
     supabase.from('campaigns').select('*').eq('id', params.id).single(),
     supabase
       .from('campaign_matches')
       .select('*', { count: 'exact', head: true })
       .eq('campaign_id', params.id),
+    supabase
+      .from('campaign_influencers')
+      .select('*, influencer:influencers(*)')
+      .eq('campaign_id', params.id)
+      .order('match_score', { ascending: false }),
   ])
 
   if (!campaignRow) notFound()
 
   const campaign = campaignRow as Campaign
   const isOwner = userId === campaign.sme_id
+  const campaignInfluencers = (ciData ?? []) as unknown as CampaignInfluencer[]
+  const alreadyAddedIds = campaignInfluencers.map((ci) => ci.influencer_id)
   const status = STATUS_CONFIG[campaign.status]
   const statusLabel = locale === 'en' ? status.label_en : status.label_th
 
@@ -242,6 +252,22 @@ export default async function CampaignDetailPage({
           )}
         </p>
       </Section>
+
+      {/* ── AI Matching (owner only) ── */}
+      {isOwner && (
+        <AiMatchingPanel
+          campaignId={campaign.id}
+          alreadyAddedIds={alreadyAddedIds}
+        />
+      )}
+
+      {/* ── Campaign Influencers (owner only) ── */}
+      {isOwner && (
+        <CampaignInfluencersSection
+          campaignId={campaign.id}
+          items={campaignInfluencers}
+        />
+      )}
     </div>
   )
 }

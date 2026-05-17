@@ -1,4 +1,4 @@
-import type { TalentScoreBreakdown, Platform, CampaignStatus, MatchStatus } from './index'
+import type { TalentScoreBreakdown, Platform, CampaignStatus, MatchStatus, CampaignInfluencerStatus } from './index'
 
 export type Json = string | number | boolean | null | { [key: string]: Json } | Json[]
 
@@ -104,6 +104,29 @@ export interface Database {
         }
         Insert: Omit<Database['public']['Tables']['campaign_matches']['Row'], 'id' | 'matched_at'>
         Update: Partial<Database['public']['Tables']['campaign_matches']['Insert']>
+        Relationships: []
+      }
+      campaign_influencers: {
+        Row: {
+          id: string
+          campaign_id: string
+          influencer_id: string
+          match_score: number
+          ai_reasoning: string | null
+          estimated_reach: number
+          status: CampaignInfluencerStatus
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          influencer_id: string
+          match_score?: number
+          ai_reasoning?: string | null
+          estimated_reach?: number
+          status?: CampaignInfluencerStatus
+        }
+        Update: Partial<Database['public']['Tables']['campaign_influencers']['Insert']>
         Relationships: []
       }
       reports: {

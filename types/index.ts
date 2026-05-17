@@ -86,6 +86,30 @@ export interface Report {
 
 // ─── Agent I/O ───────────────────────────────────────────────────────────────
 
+export type CampaignInfluencerStatus = 'pending' | 'contacted' | 'confirmed' | 'rejected'
+
+export interface CampaignInfluencer {
+  id: string
+  campaign_id: string
+  influencer_id: string
+  match_score: number
+  ai_reasoning: string | null
+  estimated_reach: number
+  status: CampaignInfluencerStatus
+  created_at: string
+  updated_at: string
+  influencer?: Influencer
+}
+
+export interface AIMatchResult {
+  influencer_id: string
+  match_score: number
+  reasoning: string
+  estimated_reach: number
+  roi_estimate: string
+  influencer?: Influencer
+}
+
 export interface AgentResult<T = unknown> {
   success: boolean
   data?: T
