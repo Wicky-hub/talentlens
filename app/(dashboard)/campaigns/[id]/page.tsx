@@ -64,12 +64,16 @@ export default async function CampaignDetailPage({
   const [locale, supabase] = await Promise.all([getLocale(), createServerClient()])
   const t = getTranslation(locale)
 
+  // Use getSession() — reads cookies only, never triggers a token refresh or
+  // calls setAll(). We only need the user ID here to show/hide owner UI;
+  // actual authorization is enforced by RLS policies and the server actions.
+  const { data: { session } } = await supabase.auth.getSession()
+  const userId = session?.user?.id ?? null
+
   const [
-    { data: { user } },
     { data: campaignRow },
     { count: matchCount },
   ] = await Promise.all([
-    supabase.auth.getUser(),
     supabase.from('campaigns').select('*').eq('id', params.id).single(),
     supabase
       .from('campaign_matches')
@@ -80,7 +84,7 @@ export default async function CampaignDetailPage({
   if (!campaignRow) notFound()
 
   const campaign = campaignRow as Campaign
-  const isOwner = user?.id === campaign.sme_id
+  const isOwner = userId === campaign.sme_id
   const status = STATUS_CONFIG[campaign.status]
   const statusLabel = locale === 'en' ? status.label_en : status.label_th
 
