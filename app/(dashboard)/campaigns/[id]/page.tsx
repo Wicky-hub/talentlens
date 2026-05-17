@@ -91,7 +91,9 @@ export default async function CampaignDetailPage({
   const deleteLabels = {
     deleteButton:        t.campaigns.deleteButton,
     deleteConfirmTitle:  t.campaigns.deleteConfirmTitle,
-    deleteConfirmDesc:   t.campaigns.deleteConfirmDesc,
+    // Call the function here on the server — functions can't cross the
+    // server→client boundary as props to 'use client' components.
+    deleteConfirmDesc:   t.campaigns.deleteConfirmDesc(campaign.name),
     deleteConfirmAction: t.campaigns.deleteConfirmAction,
     deleteCancelAction:  t.campaigns.deleteCancelAction,
     deleting:            t.campaigns.deleting,
@@ -137,7 +139,6 @@ export default async function CampaignDetailPage({
               </Button>
               <DeleteCampaignButton
                 campaignId={campaign.id}
-                campaignName={campaign.name}
                 labels={deleteLabels}
               />
             </div>

@@ -7,11 +7,10 @@ import { deleteCampaignAction } from '@/app/actions/campaigns'
 
 interface DeleteCampaignButtonProps {
   campaignId: string
-  campaignName: string
   labels: {
     deleteButton: string
     deleteConfirmTitle: string
-    deleteConfirmDesc: (name: string) => string
+    deleteConfirmDesc: string
     deleteConfirmAction: string
     deleteCancelAction: string
     deleting: string
@@ -20,7 +19,6 @@ interface DeleteCampaignButtonProps {
 
 export function DeleteCampaignButton({
   campaignId,
-  campaignName,
   labels: l,
 }: DeleteCampaignButtonProps) {
   const [open, setOpen] = useState(false)
@@ -65,7 +63,7 @@ export function DeleteCampaignButton({
             </div>
             <h2 className="mb-2 text-lg font-semibold">{l.deleteConfirmTitle}</h2>
             <p className="mb-6 text-sm leading-relaxed text-muted-foreground">
-              {l.deleteConfirmDesc(campaignName)}
+              {l.deleteConfirmDesc}
             </p>
             {error && (
               <p className="mb-4 rounded-lg bg-destructive/5 px-3 py-2 text-sm text-destructive">
