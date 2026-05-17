@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
 
-type AvatarSize = 'sm' | 'md' | 'lg'
+type AvatarSize = 'sm' | 'md' | 'lg' | 'xl'
 
 interface InfluencerAvatarProps {
   username: string
@@ -20,9 +20,10 @@ const NICHE_COLORS: Record<string, { bg: string; text: string; ring: string }> =
 const DEFAULT_COLORS = { bg: 'bg-slate-100', text: 'text-slate-600', ring: 'ring-slate-200' }
 
 const SIZE_CLASSES: Record<AvatarSize, { wrapper: string; text: string }> = {
-  sm: { wrapper: 'h-8 w-8',  text: 'text-xs' },
-  md: { wrapper: 'h-9 w-9',  text: 'text-xs' },
+  sm: { wrapper: 'h-8 w-8',   text: 'text-xs' },
+  md: { wrapper: 'h-9 w-9',   text: 'text-xs' },
   lg: { wrapper: 'h-12 w-12', text: 'text-sm' },
+  xl: { wrapper: 'h-16 w-16', text: 'text-lg' },
 }
 
 function getNicheColors(categories: string[] = []) {

@@ -35,6 +35,7 @@ export interface Database {
           location: string
           profile_image_url: string
           profile_url: string
+          price_per_post: number
           talent_score: number | null
           talent_score_breakdown: TalentScoreBreakdown | null
           apify_actor_run_id: string | null
@@ -56,6 +57,7 @@ export interface Database {
           profile_image_url: string
           profile_url: string
           // nullable columns default to NULL — callers may omit them
+          price_per_post?: number
           talent_score?: number | null
           talent_score_breakdown?: TalentScoreBreakdown | null
           apify_actor_run_id?: string | null
