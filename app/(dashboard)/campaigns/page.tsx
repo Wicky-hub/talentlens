@@ -7,6 +7,9 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { getLocale } from '@/lib/locale'
 import { getTranslation } from '@/lib/i18n'
+import { CampaignTabs } from '@/components/campaigns/campaign-tabs'
+
+export const dynamic = 'force-dynamic'
 
 type T = ReturnType<typeof getTranslation>
 
@@ -27,11 +30,28 @@ function formatFollowerRange(min: number, max: number, unit: string): string {
   return unit ? `${range} ${unit}` : range
 }
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type PageProps = { searchParams: { [key: string]: string | string[] | undefined } }
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default async function CampaignsPage() {
+export default async function CampaignsPage({ searchParams }: PageProps) {
+  const tab = searchParams?.tab === 'mine' ? 'mine' : 'all'
   const [locale, supabase] = await Promise.all([getLocale(), createServerClient()])
   const t = getTranslation(locale)
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  let campaignsQuery = supabase
+    .from('campaigns')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (tab === 'mine' && user) {
+    campaignsQuery = campaignsQuery.eq('sme_id', user.id)
+  }
 
   const [
     { data: campaignData },
@@ -39,7 +59,7 @@ export default async function CampaignsPage() {
     { count: completedCount },
     { data: matchIds },
   ] = await Promise.all([
-    supabase.from('campaigns').select('*').order('created_at', { ascending: false }),
+    campaignsQuery,
     supabase
       .from('campaigns')
       .select('*', { count: 'exact', head: true })
@@ -74,6 +94,13 @@ export default async function CampaignsPage() {
         </Button>
       </div>
 
+      {/* ── Tabs ── */}
+      <CampaignTabs
+        currentTab={tab}
+        labelAll={t.campaigns.tabAll}
+        labelMine={t.campaigns.tabMine}
+      />
+
       {/* ── Stats ── */}
       <div className="grid grid-cols-3 gap-4">
         <MiniStat label={t.campaigns.statTotal} value={campaigns.length} icon={Megaphone} />
@@ -92,7 +119,7 @@ export default async function CampaignsPage() {
 
       {/* ── Campaign grid ── */}
       {campaigns.length === 0 ? (
-        <EmptyState t={t} />
+        <EmptyState t={t} isMineTab={tab === 'mine'} />
       ) : (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {campaigns.map((campaign) => (
@@ -248,10 +275,13 @@ function CampaignCard({
 
       {/* Footer action */}
       <div className="border-t px-5 py-3">
-        <button className="flex w-full items-center justify-between text-sm font-medium text-primary transition-colors hover:text-primary/80">
+        <Link
+          href={`/campaigns/${campaign.id}`}
+          className="flex w-full items-center justify-between text-sm font-medium text-primary transition-colors hover:text-primary/80"
+        >
           {t.campaigns.viewMatches}
           <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-        </button>
+        </Link>
       </div>
     </div>
   )
@@ -259,19 +289,25 @@ function CampaignCard({
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
-function EmptyState({ t }: { t: T }) {
+function EmptyState({ t, isMineTab }: { t: T; isMineTab: boolean }) {
   return (
     <div className="flex flex-col items-center justify-center gap-4 rounded-xl border bg-card py-24 text-center">
       <div className="rounded-full bg-muted p-5">
         <Megaphone className="h-8 w-8 text-muted-foreground" />
       </div>
       <div className="space-y-1">
-        <p className="font-semibold">{t.campaigns.noCampaigns}</p>
-        <p className="text-sm text-muted-foreground">{t.campaigns.noCampaignsDesc}</p>
+        <p className="font-semibold">
+          {isMineTab ? t.campaigns.noMyCampaigns : t.campaigns.noCampaigns}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {isMineTab ? t.campaigns.noMyCampaignsDesc : t.campaigns.noCampaignsDesc}
+        </p>
       </div>
-      <Button size="sm" asChild>
-        <Link href="/campaigns/new">{t.campaigns.createFirst}</Link>
-      </Button>
+      {!isMineTab && (
+        <Button size="sm" asChild>
+          <Link href="/campaigns/new">{t.campaigns.createFirst}</Link>
+        </Button>
+      )}
     </div>
   )
 }

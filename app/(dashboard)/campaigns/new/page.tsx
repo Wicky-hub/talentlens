@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { getLocale } from '@/lib/locale'
 import { getTranslation } from '@/lib/i18n'
-import { NewCampaignForm } from '@/components/campaigns/new-campaign-form'
+import { CampaignForm } from '@/components/campaigns/campaign-form'
+import { createCampaignAction } from '@/app/actions/campaigns'
 
 export default async function NewCampaignPage() {
   const locale = await getLocale()
@@ -20,7 +21,6 @@ export default async function NewCampaignPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      {/* Header */}
       <div>
         <Link
           href="/campaigns"
@@ -32,7 +32,12 @@ export default async function NewCampaignPage() {
         <p className="mt-1 text-sm text-muted-foreground">{t.newCampaign.subtitle}</p>
       </div>
 
-      <NewCampaignForm t={t.newCampaign} nicheLabels={nicheLabels} />
+      <CampaignForm
+        t={t.newCampaign}
+        nicheLabels={nicheLabels}
+        mode="create"
+        submitAction={createCampaignAction}
+      />
     </div>
   )
 }
